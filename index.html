@@ -49,7 +49,7 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
 <body>
 <header>
   <h1>P26129 Industry Survey F2F – QC data</h1>
-  <div class="meta" id="snap">Đang tải dữ liệu…</div>
+  <div class="meta" id="snap">Đang tải dữ liệu từ Google Sheet…</div>
 </header>
 <main>
   <p class="lead" id="lead">—</p>
@@ -113,11 +113,12 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
       <li><b>Logic giữa câu:</b> lẽ ra bị screen out (A1, A2, A3, A5, A6, A9, A10, B4 = Không rõ); sai nhánh A4 → A5/A6; B1 dưới 3 vị trí; B1 dùng 2–3 ô Khác (quota tối đa 50); B5 không đúng 3 hoặc ngoài B1; C1 ngoài 0–98/99; C2/C3 hỏi sai thẻ theo C1; C1 lớn hơn mức trên của B4; C6 so với C4; quản lý có kế hoạch tuyển nhưng C5 = Không tuyển cả 3 thẻ; D3 khi D2 = 96; D5 so với D4; D7/D8 so với D6; D7 chỉ nhập 1 ngành hoặc 2 ngành trùng nhau; E2 so với E1; module H sai base; nhân viên nhưng “quyết định tuyển ai”; 3–5 năm kinh nghiệm nhưng cấp GĐ/CEO; phòng ban (B4) lớn hơn công ty (A10); F2 so với C2.</li>
       <li><b>So với thực tế:</b> phỏng vấn dưới 25 phút hoặc trên 120 phút; mở bài từ 3 phiên; bắt đầu trước 7h hoặc sau 21h; lương khởi điểm từ 30 triệu; tuyển từ 30 người mới/12 tháng ở công ty dưới 200 người; dự kiến tuyển trên 20 người mới/năm ở công ty dưới 50 người; C3a cùng một mức cho mọi kỹ năng; câu mở D1–D3 quá ngắn hoặc chép y hệt cho mọi vị trí; từ 6 câu “Không rõ”; SĐT không đủ 10 số; trùng SĐT với bài khác; cùng PVV phỏng vấn nhiều người cùng công ty hoặc cùng tên đường; link thành phố khác A1.</li>
       <li><b>Mức độ:</b> Cao = gần như chắc chắn sai, cần sửa hoặc gọi lại · Trung bình = nghi vấn, cần kiểm tra · Thấp = lưu ý · Theo dõi = để theo dõi quota.</li>
-      <li>Tên, SĐT, địa chỉ, tên công ty của đáp viên không có trong dữ liệu dashboard; chỉ dùng khi chạy <code>qc.py</code> để tìm trùng lặp.</li>
+      <li>Dashboard đọc thẳng Google Sheet mỗi lần mở và tự làm mới mỗi 5 phút. Tên, SĐT, địa chỉ, tên công ty của đáp viên chỉ dùng để tìm trùng lặp, không hiện trên trang.</li>
     </ul>
   </details>
 </main>
 
+<script src="qc.js"></script>
 <script>
 const SEVW = {'Cao': 3, 'Trung bình': 2, 'Thấp': 1, 'Theo dõi': 0};
 const CITYQ = {'TP. Hồ Chí Minh': 175, 'Hà Nội': 175, 'Đà Nẵng': 50};
@@ -154,13 +155,46 @@ function bar(tr, pct, loai) {
   b.appendChild(s); c.appendChild(b); const t = document.createElement('div'); t.className = 'sub'; t.style.margin = '2px 0 0'; t.textContent = pct + '%'; c.appendChild(t);
 }
 
-Promise.all(['data/interviews.json', 'data/flags.json'].map(u => fetch(u + '?v=' + Date.now()).then(r => { if (!r.ok) throw new Error(u + ': ' + r.status); return r.json(); })))
-  .then(([I, F]) => render(I, F))
-  .catch(e => { $('#snap').innerHTML = ''; $('#snap').append('Không tải được dữ liệu: ' + e.message); $('#lead').className = 'lead err'; $('#lead').textContent = 'Mở trang qua GitHub Pages hoặc chạy “python -m http.server” trong thư mục repo (trình duyệt chặn đọc file khi mở trực tiếp).'; });
+/* ====== Dữ liệu live: Google Sheet "RMIT_Industry Survey" (Raw_Data = XML SurveyToGo, chia chunk) ====== */
+const SHEET_ID = '1xRJJGpcCm1iLtUxUi7VZaDa6J9480jUEb7fS0DdzLPU';
+const GID_RAW = 1339841051, GID_LOG = 755162306, REFRESH_MIN = 5;
+function parseCSV(text) {
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) { const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; } else if (c !== '\r') f += c; }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+async function fetchSheet(gid) {
+  const urls = [`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`,
+                `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`];
+  let err;
+  for (const u of urls) { try { const r = await fetch(u + '&_=' + Date.now(), {cache: 'no-store'}); if (!r.ok) throw new Error('HTTP ' + r.status); return parseCSV(await r.text()); } catch (e) { err = e; } }
+  throw err;
+}
+let loading = false;
+async function load() {
+  if (loading) return; loading = true;
+  $('#snap').textContent = 'Đang tải dữ liệu từ Google Sheet…';
+  try {
+    const [raw, log] = await Promise.all([fetchSheet(GID_RAW), fetchSheet(GID_LOG).catch(() => [])]);
+    const rows = raw.slice(1).filter((r) => r[3]);
+    if (!rows.length) throw new Error('Tab Raw_Data trống (có thể đang sync)');
+    const batch = Math.max(...rows.map((r) => +r[1] || 0));
+    const xml = rows.filter((r) => (+r[1] || 0) === batch).sort((a, b) => (+a[2]) - (+b[2])).map((r) => r[3]).join('');
+    const {interviews, flags} = QC.run(xml);
+    const last = log.filter((r) => r[0]).pop();
+    render({rows: interviews}, {rows: flags});
+    $('#snap').textContent = `Nguồn: Google Sheet “RMIT_Industry Survey” · Sheet sync lúc ${last ? last[0] : '—'} · Trang tải lúc ${new Date().toLocaleTimeString('vi-VN')} · Tự làm mới mỗi ${REFRESH_MIN} phút`;
+  } catch (e) {
+    $('#snap').textContent = 'Không tải được dữ liệu: ' + e.message + ' (sẽ thử lại sau ' + REFRESH_MIN + ' phút; số liệu đang hiện là lần tải trước, nếu có)';
+  } finally { loading = false; }
+}
+load(); setInterval(load, REFRESH_MIN * 60e3);
 
 function render(I, F) {
-  const snap = (I.meta || []).find(m => m.label === 'Snapshot');
-  $('#snap').textContent = 'Nguồn: Google Sheet “RMIT_Industry Survey” (Raw_Data) · Cập nhật: ' + (snap ? snap.value : '—');
   const iv = I.rows.filter(r => !r.test);
   const fl = F.rows.filter(f => f.pvv !== 'TEST');
 
@@ -244,7 +278,7 @@ function render(I, F) {
   }
 
   // Detail
-  const opts = (sel, vals) => { for (const v of [...new Set(vals)].sort()) sel.add(new Option(v, v)); };
+  const opts = (sel, vals) => { const keep = sel.value; while (sel.options.length > 1) sel.remove(1); for (const v of [...new Set(vals)].sort()) sel.add(new Option(v, v)); sel.value = [...sel.options].some(o => o.value === keep) ? keep : ''; };
   opts($('#f-pvv'), fl.map(f => f.pvv)); opts($('#f-city'), fl.map(f => f.city)); opts($('#f-check'), fl.map(f => f.check));
   ['#f-pvv', '#f-city', '#f-group', '#f-sev', '#f-check'].forEach(s => $(s).onchange = drawDetail); $('#f-id').oninput = drawDetail;
   function drawDetail() {
