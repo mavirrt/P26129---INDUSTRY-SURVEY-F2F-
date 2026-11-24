@@ -1,0 +1,5 @@
+data/raw.xml
+data/recs.json
+*.xlsx
+service-account*.json
+__pycache__/

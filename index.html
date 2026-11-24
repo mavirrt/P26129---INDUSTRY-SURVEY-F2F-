@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P26129 Industry Survey F2F – QC data</title>
+<style>
+:root{--bg:#f5f6f8;--panel:#fff;--line:#e3e6eb;--fg:#1d2433;--muted:#6b7385;--accent:#1f4e79;--accent2:#8fb3d9;--bad:#c0392b;--warn:#b7791f;--ok:#2f855a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+header{background:var(--accent);color:#fff;padding:18px 24px}
+header h1{margin:0;font-size:20px;font-weight:600}
+header .meta{opacity:.8;font-size:12px;margin-top:4px}
+main{max-width:1280px;margin:0 auto;padding:20px 24px 40px;display:flex;flex-direction:column;gap:20px}
+.lead{font-size:15px;margin:0}
+.lead b{color:var(--bad)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+.tile .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.tile .val{font-size:30px;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums}
+.tile .note{font-size:12px;color:var(--muted)}
+h2{font-size:15px;margin:0 0 2px;font-weight:600}
+.sub{color:var(--muted);font-size:12px;margin:0 0 12px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap;background:#fafbfc;position:sticky;top:0}
+th.sort{cursor:pointer}
+td.n,th.n{text-align:right}
+.hot{color:var(--bad);font-weight:600}.warm{color:var(--warn);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;border:1px solid var(--line);white-space:nowrap}
+.sev-Cao{color:var(--bad);border-color:var(--bad)}.sev-Trung{color:var(--warn);border-color:var(--warn)}.sev-Thấp{color:var(--muted)}.sev-Theo{color:var(--accent);border-color:var(--accent2)}
+.bar{height:8px;background:#edf0f4;border-radius:4px;overflow:hidden;min-width:90px}.bar span{display:block;height:100%}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+select,input{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:#fff}
+.hbar{display:grid;grid-template-columns:minmax(160px,42%) 1fr;gap:6px 10px;align-items:center;font-size:13px}
+.hbar .t{text-align:right;color:var(--fg)}
+.hbar .b{display:flex;align-items:center;gap:6px}
+.hbar .b span.r{height:14px;border-radius:2px}
+.hbar .b em{font-style:normal;color:var(--muted);font-size:12px}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
+.err{color:var(--bad)}
+</style>
+</head>
+<body>
+<header>
+  <h1>P26129 Industry Survey F2F – QC data</h1>
+  <div class="meta" id="snap">Đang tải dữ liệu…</div>
+</header>
+<main>
+  <p class="lead" id="lead">—</p>
+
+  <section class="tiles">
+    <div class="card tile"><div class="lbl">Số bài hoàn thành</div><div class="val" id="k-n">—</div><div class="note">Quota tổng 400 · không tính test</div></div>
+    <div class="card tile"><div class="lbl">Bài có lỗi mức Cao</div><div class="val" id="k-high">—</div><div class="note" id="k-highn">—</div></div>
+    <div class="card tile"><div class="lbl">Tổng số lỗi</div><div class="val" id="k-flags">—</div><div class="note">Mọi mức độ</div></div>
+    <div class="card tile"><div class="lbl">Thời lượng trung vị</div><div class="val" id="k-min">—</div><div class="note">Phút, từ câu đầu đến câu cuối</div></div>
+  </section>
+
+  <section class="card">
+    <h2>Lỗi theo loại check</h2>
+    <p class="sub">Số bài dính từng loại lỗi.</p>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Logic giữa các câu</span><span><i style="background:var(--accent2)"></i>So với thực tế</span></div>
+    <div class="hbar" id="checks"></div>
+  </section>
+
+  <section class="card">
+    <h2>So sánh giữa các PVV</h2>
+    <p class="sub">Mã PVV lấy từ SbjNam (bỏ chữ số cuối, ví dụ 1271–1279 là PVV 127). Màu đỏ: cao hơn hẳn mức chung. Bấm tiêu đề cột để sắp xếp.</p>
+    <div class="tw"><table id="pvv"><thead><tr>
+      <th class="sort" data-k="pvv">PVV</th><th class="sort" data-k="city">Thành phố</th><th class="n sort" data-k="n">Số bài</th>
+      <th class="n sort" data-k="avg_min">TB phút</th><th class="n sort" data-k="short">Bài &lt; 25 phút</th>
+      <th class="n sort" data-k="pct_high">% bài lỗi Cao</th><th class="n sort" data-k="flags_per_iv">Lỗi / bài</th>
+      <th class="n sort" data-k="dk_avg">“Không rõ” / bài</th><th class="n sort" data-k="b1_avg">B1 TB vị trí</th><th>Lỗi hay gặp nhất</th>
+    </tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Theo thành phố</h2>
+      <p class="sub">Tiến độ so với quota (HCM 175, HN 175, ĐN 50) và chất lượng. Thành phố theo link phỏng vấn.</p>
+      <div class="tw"><table id="city"><thead><tr><th>Thành phố</th><th class="n">Bài</th><th class="n">Quota</th><th>Tiến độ</th><th class="n">TB phút</th><th class="n">% lỗi Cao</th><th class="n">% quản lý</th><th class="n">Link ≠ A1</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>Quota khác</h2>
+      <p class="sub">Theo QNR: tối thiểu, tối đa hoặc mục tiêu trên tổng 400 mẫu. Đỏ: đã vượt mức tối đa.</p>
+      <div class="tw"><table id="quota"><thead><tr><th>Chỉ tiêu</th><th>Loại</th><th class="n">Hiện có</th><th class="n">Quota</th><th>Tiến độ</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Danh sách lỗi chi tiết</h2>
+    <p class="sub">Lọc theo PVV, thành phố, nhóm check, mức độ hoặc mã bài. Sắp theo mức độ.</p>
+    <div class="filters">
+      <select id="f-pvv"><option value="">Mọi PVV</option></select>
+      <select id="f-city"><option value="">Mọi thành phố</option></select>
+      <select id="f-group"><option value="">Mọi nhóm check</option><option>Logic giữa câu</option><option>So với thực tế</option></select>
+      <select id="f-sev"><option value="">Mọi mức độ</option><option>Cao</option><option>Trung bình</option><option>Thấp</option><option>Theo dõi</option></select>
+      <select id="f-check"><option value="">Mọi loại lỗi</option></select>
+      <input id="f-id" placeholder="Mã bài (SbjNum)" size="16">
+    </div>
+    <p class="sub">Đang hiện <b id="d-count">—</b> lỗi.</p>
+    <div class="tw"><table id="detail"><thead><tr><th>Mã bài</th><th>PVV</th><th>Thành phố</th><th>Mức độ</th><th>Nhóm</th><th>Lỗi</th><th>Chi tiết</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <details class="card">
+    <summary>Các check đang chạy và ngưỡng</summary>
+    <ul>
+      <li><b>Logic giữa câu:</b> lẽ ra bị screen out (A1, A2, A3, A5, A6, A9, A10, B4 = Không rõ); sai nhánh A4 → A5/A6; B1 dưới 3 vị trí; B1 dùng 2–3 ô Khác (quota tối đa 50); B5 không đúng 3 hoặc ngoài B1; C1 ngoài 0–98/99; C2/C3 hỏi sai thẻ theo C1; C1 lớn hơn mức trên của B4; C6 so với C4; quản lý có kế hoạch tuyển nhưng C5 = Không tuyển cả 3 thẻ; D3 khi D2 = 96; D5 so với D4; D7/D8 so với D6; D7 chỉ nhập 1 ngành hoặc 2 ngành trùng nhau; E2 so với E1; module H sai base; nhân viên nhưng “quyết định tuyển ai”; 3–5 năm kinh nghiệm nhưng cấp GĐ/CEO; phòng ban (B4) lớn hơn công ty (A10); F2 so với C2.</li>
+      <li><b>So với thực tế:</b> phỏng vấn dưới 25 phút hoặc trên 120 phút; mở bài từ 3 phiên; bắt đầu trước 7h hoặc sau 21h; lương khởi điểm từ 30 triệu; tuyển từ 30 người mới/12 tháng ở công ty dưới 200 người; dự kiến tuyển trên 20 người mới/năm ở công ty dưới 50 người; C3a cùng một mức cho mọi kỹ năng; câu mở D1–D3 quá ngắn hoặc chép y hệt cho mọi vị trí; từ 6 câu “Không rõ”; SĐT không đủ 10 số; trùng SĐT với bài khác; cùng PVV phỏng vấn nhiều người cùng công ty hoặc cùng tên đường; link thành phố khác A1.</li>
+      <li><b>Mức độ:</b> Cao = gần như chắc chắn sai, cần sửa hoặc gọi lại · Trung bình = nghi vấn, cần kiểm tra · Thấp = lưu ý · Theo dõi = để theo dõi quota.</li>
+      <li>Tên, SĐT, địa chỉ, tên công ty của đáp viên không có trong dữ liệu dashboard; chỉ dùng khi chạy <code>qc.py</code> để tìm trùng lặp.</li>
+    </ul>
+  </details>
+</main>
+
+<script>
+const SEVW = {'Cao': 3, 'Trung bình': 2, 'Thấp': 1, 'Theo dõi': 0};
+const CITYQ = {'TP. Hồ Chí Minh': 175, 'Hà Nội': 175, 'Đà Nẵng': 50};
+const QUOTA = [
+  ['Quản lý trở lên (A4 = 3–5)', 'Mục tiêu', 150, r => r.a4 >= 3],
+  ['Kinh nghiệm 10+ năm (A2 = 6–7)', 'Mục tiêu', 150, r => r.a2 >= 6 && r.a2 <= 7],
+  ['A7 Nhân sự / tuyển dụng', 'Mục tiêu', 30, r => r.a7 === 2],
+  ['A7 Công nghệ thông tin', 'Mục tiêu', 50, r => r.a7 === 6],
+  ['A7 Y tế / sức khoẻ tâm lý', 'Mục tiêu', 30, r => r.a7 === 15],
+  ['A7 Xây dựng / quy hoạch', 'Mục tiêu', 50, r => r.a7 === 16],
+  ['A7 Khác', 'Tối đa', 50, r => r.a7 === 97],
+  ['A8 Xây dựng, BĐS, kiến trúc', 'Tối thiểu', 50, r => r.a8 === 11],
+  ['A8 CNTT, dữ liệu, AI', 'Tối thiểu', 30, r => r.a8 === 1],
+  ['A8 Ngân hàng, tài chính, bảo hiểm', 'Tối thiểu', 30, r => r.a8 === 2],
+  ['A8 Sản xuất, công nghiệp nặng', 'Tối thiểu', 30, r => r.a8 === 3],
+  ['A8 Logistics, chuỗi cung ứng', 'Tối thiểu', 30, r => r.a8 === 8],
+  ['A8 Robot, ô tô, giao thông điện', 'Tối thiểu', 30, r => r.a8 === 10],
+  ['A8 Y tế, thiết bị y tế, tâm lý', 'Tối thiểu', 30, r => r.a8 === 13],
+  ['A8 Năng lượng, môi trường', 'Tối thiểu', 30, r => r.a8 === 14],
+  ['A8 Kỹ thuật, R&D', 'Tối thiểu', 30, r => r.a8 === 15],
+  ['A8 Lĩnh vực khác', 'Tối đa', 30, r => r.a8 === 97],
+  ['A10 Dưới 20 người', 'Tối đa', 40, r => r.a10 === 1],
+  ['A10 20–49 người', 'Tối đa', 80, r => r.a10 === 2],
+  ['B1 dùng 2–3 ô Khác', 'Tối đa', 50, r => r.b1_other >= 2],
+];
+const $ = s => document.querySelector(s);
+const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
+const r1 = x => x == null ? null : Math.round(x * 10) / 10;
+function td(tr, v, cls) { const c = tr.insertCell(); c.textContent = v == null || v === '' ? '—' : v; if (cls) c.className = cls; return c; }
+function bar(tr, pct, loai) {
+  const c = tr.insertCell(), b = document.createElement('div'), s = document.createElement('span');
+  b.className = 'bar'; s.style.width = Math.min(pct, 100) + '%';
+  s.style.background = loai === 'Tối đa' ? (pct >= 100 ? 'var(--bad)' : pct >= 80 ? 'var(--warn)' : 'var(--accent)') : (pct >= 100 ? 'var(--ok)' : 'var(--accent)');
+  b.appendChild(s); c.appendChild(b); const t = document.createElement('div'); t.className = 'sub'; t.style.margin = '2px 0 0'; t.textContent = pct + '%'; c.appendChild(t);
+}
+
+Promise.all(['data/interviews.json', 'data/flags.json'].map(u => fetch(u + '?v=' + Date.now()).then(r => { if (!r.ok) throw new Error(u + ': ' + r.status); return r.json(); })))
+  .then(([I, F]) => render(I, F))
+  .catch(e => { $('#snap').innerHTML = ''; $('#snap').append('Không tải được dữ liệu: ' + e.message); $('#lead').className = 'lead err'; $('#lead').textContent = 'Mở trang qua GitHub Pages hoặc chạy “python -m http.server” trong thư mục repo (trình duyệt chặn đọc file khi mở trực tiếp).'; });
+
+function render(I, F) {
+  const snap = (I.meta || []).find(m => m.label === 'Snapshot');
+  $('#snap').textContent = 'Nguồn: Google Sheet “RMIT_Industry Survey” (Raw_Data) · Cập nhật: ' + (snap ? snap.value : '—');
+  const iv = I.rows.filter(r => !r.test);
+  const fl = F.rows.filter(f => f.pvv !== 'TEST');
+
+  // KPI
+  const nHigh = iv.filter(r => r.n_high > 0).length;
+  const mins = iv.map(r => r.minutes).filter(m => m != null).sort((a, b) => a - b);
+  const med = mins.length ? (mins.length % 2 ? mins[(mins.length - 1) / 2] : (mins[mins.length / 2 - 1] + mins[mins.length / 2]) / 2) : null;
+  $('#k-n').textContent = iv.length;
+  $('#k-high').textContent = iv.length ? Math.round(nHigh / iv.length * 100) + '%' : '—';
+  $('#k-highn').textContent = nHigh + ' bài';
+  $('#k-flags').textContent = fl.length;
+  $('#k-min').textContent = med == null ? '—' : Math.round(med);
+
+  // By check
+  const bc = new Map();
+  for (const f of fl) { if (!bc.has(f.check)) bc.set(f.check, {check: f.check, group: f.group, severity: f.severity, ids: new Set()}); bc.get(f.check).ids.add(f.id); }
+  const checks = [...bc.values()].map(x => ({...x, n: x.ids.size})).sort((a, b) => b.n - a.n || SEVW[b.severity] - SEVW[a.severity]);
+  const mx = Math.max(1, ...checks.map(c => c.n));
+  const hb = $('#checks'); hb.replaceChildren();
+  for (const c of checks) {
+    const t = document.createElement('div'); t.className = 't'; t.textContent = c.check; t.title = `${c.group} · mức ${c.severity}`;
+    const b = document.createElement('div'); b.className = 'b';
+    const r = document.createElement('span'); r.className = 'r'; r.style.width = (c.n / mx * 85) + '%'; r.style.background = c.group === 'Logic giữa câu' ? 'var(--accent)' : 'var(--accent2)';
+    const e = document.createElement('em'); e.textContent = c.n + ' bài · ' + c.severity;
+    b.append(r, e); hb.append(t, b);
+    t.style.cursor = b.style.cursor = 'pointer';
+    t.onclick = b.onclick = () => { $('#f-check').value = c.check; drawDetail(); $('#detail').scrollIntoView({behavior: 'smooth'}); };
+  }
+
+  // By PVV
+  const byP = new Map(); for (const r of iv) { if (!byP.has(r.pvv)) byP.set(r.pvv, []); byP.get(r.pvv).push(r); }
+  let pvv = [...byP].map(([p, rs]) => {
+    const f = fl.filter(x => x.pvv === p && x.severity !== 'Theo dõi');
+    const cnt = {}; for (const x of f) cnt[x.check] = (cnt[x.check] || 0) + 1;
+    const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+    const m = rs.map(r => r.minutes).filter(x => x != null);
+    return {pvv: p, city: rs[0].city, n: rs.length, avg_min: m.length ? Math.round(mean(m)) : null,
+      short: rs.filter(r => r.minutes != null && r.minutes < 25).length,
+      pct_high: Math.round(rs.filter(r => r.n_high > 0).length / rs.length * 100),
+      flags_per_iv: r1(fl.filter(x => x.pvv === p).length / rs.length),
+      dk_avg: r1(mean(rs.map(r => r.dont_know))), b1_avg: r1(mean(rs.map(r => r.b1_n))), top: top ? top[0] : ''};
+  });
+  const A = {pct_high: mean(pvv.map(r => r.pct_high)), fpi: mean(pvv.map(r => r.flags_per_iv)), dk: mean(pvv.map(r => r.dk_avg))};
+  let sortK = 'flags_per_iv', sortD = -1;
+  function drawPvv() {
+    pvv.sort((a, b) => (a[sortK] > b[sortK] ? 1 : a[sortK] < b[sortK] ? -1 : 0) * sortD);
+    const tb = $('#pvv tbody'); tb.replaceChildren();
+    for (const r of pvv) {
+      const tr = tb.insertRow();
+      const c0 = td(tr, r.pvv); c0.style.cursor = 'pointer'; c0.style.textDecoration = 'underline'; c0.onclick = () => { $('#f-pvv').value = r.pvv; drawDetail(); $('#detail').scrollIntoView({behavior: 'smooth'}); };
+      td(tr, r.city); td(tr, r.n, 'n');
+      td(tr, r.avg_min, 'n' + (r.avg_min != null && r.avg_min < 35 ? ' hot' : ''));
+      td(tr, r.short, 'n' + (r.short > 0 ? ' hot' : ''));
+      td(tr, r.pct_high + '%', 'n' + (r.pct_high > Math.max(A.pct_high * 1.5, 20) ? ' hot' : ''));
+      td(tr, r.flags_per_iv, 'n' + (r.flags_per_iv > A.fpi * 1.5 ? ' hot' : r.flags_per_iv > A.fpi ? ' warm' : ''));
+      td(tr, r.dk_avg, 'n' + (r.dk_avg > Math.max(A.dk * 2, 2) ? ' hot' : ''));
+      td(tr, r.b1_avg, 'n'); td(tr, r.top);
+    }
+  }
+  document.querySelectorAll('#pvv th.sort').forEach(th => th.onclick = () => { const k = th.dataset.k; sortD = sortK === k ? -sortD : -1; sortK = k; drawPvv(); });
+  drawPvv();
+  const worst = [...pvv].sort((a, b) => b.flags_per_iv - a.flags_per_iv).filter(r => r.flags_per_iv > 0).slice(0, 3);
+  $('#lead').replaceChildren();
+  const bh = document.createElement('b'); bh.textContent = nHigh;
+  $('#lead').append(bh, ` trên ${iv.length} bài có ít nhất một lỗi mức Cao. PVV cần xem trước: `, worst.length ? worst.map(r => `${r.pvv} (${r.flags_per_iv} lỗi/bài)`).join(', ') : 'chưa có', '.');
+
+  // City
+  const ct = $('#city tbody'); ct.replaceChildren();
+  for (const [city, q] of Object.entries(CITYQ)) {
+    const rs = iv.filter(r => r.city === city), n = rs.length, m = rs.map(r => r.minutes).filter(x => x != null);
+    const tr = ct.insertRow(); td(tr, city); td(tr, n, 'n'); td(tr, q, 'n'); bar(tr, Math.round(n / q * 100), 'Mục tiêu');
+    td(tr, m.length ? Math.round(mean(m)) : null, 'n');
+    td(tr, n ? Math.round(rs.filter(r => r.n_high > 0).length / n * 100) + '%' : '—', 'n');
+    td(tr, n ? Math.round(rs.filter(r => r.a4 >= 3).length / n * 100) + '%' : '—', 'n');
+    const mm = rs.filter(r => r.a1 && r.a1 !== city).length; td(tr, mm, 'n' + (mm ? ' hot' : ''));
+  }
+  const qt = $('#quota tbody'); qt.replaceChildren();
+  for (const [name, loai, target, f] of QUOTA) {
+    const n = iv.filter(f).length, tr = qt.insertRow();
+    td(tr, name); td(tr, loai); td(tr, n, 'n' + (loai === 'Tối đa' && n > target ? ' hot' : '')); td(tr, target, 'n'); bar(tr, Math.round(n / target * 100), loai);
+  }
+
+  // Detail
+  const opts = (sel, vals) => { for (const v of [...new Set(vals)].sort()) sel.add(new Option(v, v)); };
+  opts($('#f-pvv'), fl.map(f => f.pvv)); opts($('#f-city'), fl.map(f => f.city)); opts($('#f-check'), fl.map(f => f.check));
+  ['#f-pvv', '#f-city', '#f-group', '#f-sev', '#f-check'].forEach(s => $(s).onchange = drawDetail); $('#f-id').oninput = drawDetail;
+  function drawDetail() {
+    const P = $('#f-pvv').value, C = $('#f-city').value, G = $('#f-group').value, S = $('#f-sev').value, K = $('#f-check').value, Q = $('#f-id').value.trim();
+    const rows = fl.filter(f => (!P || f.pvv === P) && (!C || f.city === C) && (!G || f.group === G) && (!S || f.severity === S) && (!K || f.check === K) && (!Q || f.id.includes(Q)))
+      .sort((a, b) => SEVW[b.severity] - SEVW[a.severity] || a.pvv.localeCompare(b.pvv) || a.id.localeCompare(b.id));
+    $('#d-count').textContent = rows.length;
+    const tb = $('#detail tbody'); tb.replaceChildren();
+    if (!rows.length) { td(tb.insertRow(), 'Không có lỗi nào với bộ lọc này.'); return; }
+    for (const f of rows) {
+      const tr = tb.insertRow(); td(tr, f.id); td(tr, f.pvv); td(tr, f.city);
+      const c = tr.insertCell(), p = document.createElement('span'); p.className = 'pill sev-' + f.severity.split(' ')[0]; p.textContent = f.severity; c.appendChild(p);
+      td(tr, f.group); td(tr, f.check); td(tr, f.detail);
+    }
+  }
+  window.drawDetail = drawDetail; drawDetail();
+}
+</script>
+</body>
+</html>
