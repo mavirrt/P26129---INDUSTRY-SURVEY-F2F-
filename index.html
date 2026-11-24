@@ -35,6 +35,13 @@ td.n,th.n{text-align:right}
 @media (max-width:520px){.grid2{grid-template-columns:1fr}}
 .fbar{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .fbar .fin{max-width:1280px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tabs{display:flex;border:1px solid var(--accent);border-radius:5px;overflow:hidden;margin-right:8px}
+.tabs button{border:0;border-radius:0;padding:7px 16px;font-weight:600;color:var(--accent);background:#fff}
+.tabs button+button{border-left:1px solid var(--accent)}
+.tabs button.act{background:var(--accent);color:#fff}
+.tabs .cnt{display:inline-block;min-width:18px;padding:0 6px;margin-left:4px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px}
+.tabs .cnt:empty{display:none}
+.tab{display:flex;flex-direction:column;gap:20px}.tab[hidden]{display:none}
 .fbar select.on,.fbar input.on{border-color:var(--accent);background:#eef4fa}
 button{font:inherit;padding:6px 12px;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer}button:hover{background:#f2f4f7}
 #f-note{font-size:12px;color:var(--muted)}
@@ -59,6 +66,7 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
 </header>
 <nav class="fbar">
   <div class="fin">
+    <div class="tabs" role="tablist"><button type="button" role="tab" data-tab="quota" class="act">Quota</button><button type="button" role="tab" data-tab="loi">Báo lỗi <span id="tab-n" class="cnt"></span></button></div>
     <select id="f-city"><option value="">Mọi thành phố</option></select>
     <select id="f-pvv"><option value="">Mọi PVV</option></select>
     <select id="f-date"><option value="">Mọi ngày</option></select>
@@ -71,8 +79,6 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
   </div>
 </nav>
 <main>
-  <p class="lead" id="lead">—</p>
-
   <section class="tiles">
     <div class="card tile"><div class="lbl">Số bài hoàn thành</div><div class="val" id="k-n">—</div><div class="note">Quota tổng 450 · không tính test</div></div>
     <div class="card tile"><div class="lbl">Bài có lỗi mức Cao</div><div class="val" id="k-high">—</div><div class="note" id="k-highn">—</div></div>
@@ -80,13 +86,32 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
     <div class="card tile"><div class="lbl">Thời lượng trung vị</div><div class="val" id="k-min">—</div><div class="note">Phút, từ câu đầu đến câu cuối</div></div>
   </section>
 
+  <div class="tab" id="tab-quota">
+  <section class="card">
+    <h2>Theo thành phố</h2>
+    <p class="sub">Tiến độ so với quota thành phố (A1: HCM 200, HN 200, ĐN 50) và chất lượng. Cột “Link ≠ A1”: số bài mà link phỏng vấn thuộc thành phố khác câu A1.</p>
+    <div class="tw"><table id="city"><thead><tr><th>Thành phố (A1)</th><th class="n">Bài</th><th class="n">Quota</th><th>Tiến độ</th><th class="n">TB phút</th><th class="n">% lỗi Cao</th><th class="n">% quản lý</th><th class="n">Link ≠ A1</th></tr></thead><tbody></tbody></table></div>
+  </section>
+  <section class="card">
+    <h2>Quota theo file Quota All City (20/11)</h2>
+    <p class="sub">Mỗi ô: hiện có / quota. Xanh: đã đủ quota hoặc mức tối thiểu · Đỏ: vượt mức tối đa · Cam: sắp chạm mức tối đa (từ 80%). Thành phố theo câu A1.</p>
+    <div class="tw"><table id="quota"><thead><tr><th>Câu</th><th>Chỉ tiêu</th><th>Loại</th><th class="n">Tổng</th><th>Tiến độ tổng</th><th class="n">HCM</th><th class="n">HN</th><th class="n">ĐN</th></tr></thead><tbody></tbody></table></div>
+  </section>
+  <section class="card">
+    <h2>Loại hình sở hữu trong từng ngành (A11 × A8)</h2>
+    <p class="sub">Tỷ lệ tối thiểu trong mỗi ngành A8: FDI / đa quốc gia + liên doanh ≥ 30%, tư nhân Việt Nam ≥ 40%, nhà nước / khu vực công ≥ 10%. Chỉ tô đỏ khi ngành có từ 10 bài trở lên.</p>
+    <div class="tw"><table id="own"><thead><tr><th>Ngành (A8)</th><th class="n">Bài</th><th class="n">FDI + liên doanh</th><th class="n">Tư nhân VN</th><th class="n">Nhà nước</th><th class="n">Phi lợi nhuận</th></tr></thead><tbody></tbody></table></div>
+  </section>
+  </div>
+
+  <div class="tab" id="tab-loi" hidden>
+  <p class="lead" id="lead">—</p>
   <section class="card">
     <h2>Lỗi theo loại check</h2>
     <p class="sub">Số bài dính từng loại lỗi.</p>
     <div class="legend"><span><i style="background:var(--accent)"></i>Logic giữa các câu</span><span><i style="background:var(--accent2)"></i>So với thực tế</span></div>
     <div class="hbar" id="checks"></div>
   </section>
-
   <section class="card">
     <h2>So sánh giữa các PVV</h2>
     <p class="sub">Mã PVV lấy từ SbjNam (bỏ chữ số cuối, ví dụ 1271–1279 là PVV 127). Màu đỏ: cao hơn hẳn mức chung. Bấm tiêu đề cột để sắp xếp.</p>
@@ -97,32 +122,12 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
       <th class="n sort" data-k="dk_avg">“Không rõ” / bài</th><th class="n sort" data-k="b1_avg">B1 TB vị trí</th><th>Lỗi hay gặp nhất</th>
     </tr></thead><tbody></tbody></table></div>
   </section>
-
-  <section class="card">
-    <h2>Theo thành phố</h2>
-    <p class="sub">Tiến độ so với quota thành phố (A1: HCM 200, HN 200, ĐN 50) và chất lượng. Cột “Link ≠ A1”: số bài mà link phỏng vấn thuộc thành phố khác câu A1.</p>
-    <div class="tw"><table id="city"><thead><tr><th>Thành phố (A1)</th><th class="n">Bài</th><th class="n">Quota</th><th>Tiến độ</th><th class="n">TB phút</th><th class="n">% lỗi Cao</th><th class="n">% quản lý</th><th class="n">Link ≠ A1</th></tr></thead><tbody></tbody></table></div>
-  </section>
-
-  <section class="card">
-    <h2>Quota theo file Quota All City (20/11)</h2>
-    <p class="sub">Mỗi ô: hiện có / quota. Xanh: đã đủ quota hoặc mức tối thiểu · Đỏ: vượt mức tối đa · Cam: sắp chạm mức tối đa (từ 80%). Thành phố theo câu A1.</p>
-    <div class="tw"><table id="quota"><thead><tr><th>Câu</th><th>Chỉ tiêu</th><th>Loại</th><th class="n">Tổng</th><th>Tiến độ tổng</th><th class="n">HCM</th><th class="n">HN</th><th class="n">ĐN</th></tr></thead><tbody></tbody></table></div>
-  </section>
-
-  <section class="card">
-    <h2>Loại hình sở hữu trong từng ngành (A11 × A8)</h2>
-    <p class="sub">Tỷ lệ tối thiểu trong mỗi ngành A8: FDI / đa quốc gia + liên doanh ≥ 30%, tư nhân Việt Nam ≥ 40%, nhà nước / khu vực công ≥ 10%. Chỉ tô đỏ khi ngành có từ 10 bài trở lên.</p>
-    <div class="tw"><table id="own"><thead><tr><th>Ngành (A8)</th><th class="n">Bài</th><th class="n">FDI + liên doanh</th><th class="n">Tư nhân VN</th><th class="n">Nhà nước</th><th class="n">Phi lợi nhuận</th></tr></thead><tbody></tbody></table></div>
-  </section>
-
   <section class="card">
     <h2>Danh sách lỗi chi tiết</h2>
     <p class="sub">Theo bộ lọc ở đầu trang. Sắp theo mức độ.</p>
     <p class="sub">Đang hiện <b id="d-count">—</b> lỗi.</p>
     <div class="tw"><table id="detail"><thead><tr><th>Mã bài</th><th>PVV</th><th>Thành phố</th><th>Mức độ</th><th>Nhóm</th><th>Lỗi</th><th>Chi tiết</th></tr></thead><tbody></tbody></table></div>
   </section>
-
   <details class="card">
     <summary>Các check đang chạy và ngưỡng</summary>
     <ul>
@@ -134,6 +139,7 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
       <li>Dashboard đọc thẳng Google Sheet mỗi lần mở và tự làm mới mỗi 5 phút. Tên, SĐT, địa chỉ, tên công ty của đáp viên chỉ dùng để tìm trùng lặp, không hiện trên trang.</li>
     </ul>
   </details>
+  </div>
 </main>
 
 <script src="qc.js"></script>
@@ -216,6 +222,14 @@ async function load() {
 }
 load(); setInterval(load, REFRESH_MIN * 60e3);
 
+function showTab(t) {
+  if (!['quota', 'loi'].includes(t)) t = 'quota';
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('act', b.dataset.tab === t));
+  document.querySelectorAll('.tab').forEach(d => d.hidden = d.id !== 'tab-' + t);
+  if (location.hash !== '#' + t) history.replaceState(null, '', '#' + t);
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+showTab(location.hash.slice(1));
 const FILTERS = ['#f-city', '#f-pvv', '#f-date', '#f-group', '#f-sev', '#f-check', '#f-id'];
 let DATA = null;
 function rerender() { if (DATA) render(DATA.I, DATA.F); }
@@ -236,6 +250,7 @@ function render(I, F) {
   const ids = new Set(iv.map(r => r.id));
   const fl = flAll.filter(f => ids.has(f.id) && (!v.group || f.group === v.group) && (!v.sev || f.severity === v.sev) && (!v.check || f.check === v.check));
   const nOn = FILTERS.filter(s => $(s).value.trim()).length;
+  $('#tab-n').textContent = fl.filter(f => f.severity === 'Cao').length || '';
   $('#f-note').textContent = nOn ? `Đang lọc: ${iv.length}/${ivAll.length} bài, ${fl.length} lỗi` : '';
 
   // KPI
