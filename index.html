@@ -24,7 +24,7 @@ h2{font-size:15px;margin:0 0 2px;font-weight:600}
 .tw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
 th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap;background:#fafbfc;position:sticky;top:0}
+th{color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap;background:#fafbfc}
 th.sort{cursor:pointer}
 td.n,th.n{text-align:right}
 .hot{color:var(--bad);font-weight:600}.good{color:var(--ok);font-weight:600}.warm{color:var(--warn);font-weight:600}
@@ -33,7 +33,13 @@ td.n,th.n{text-align:right}
 .bar{height:8px;background:#edf0f4;border-radius:4px;overflow:hidden;min-width:90px}.bar span{display:block;height:100%}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px}
 @media (max-width:520px){.grid2{grid-template-columns:1fr}}
-.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.fbar{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.fbar .fin{max-width:1280px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fbar select.on,.fbar input.on{border-color:var(--accent);background:#eef4fa}
+button{font:inherit;padding:6px 12px;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer}button:hover{background:#f2f4f7}
+#f-note{font-size:12px;color:var(--muted)}
+#f-check{max-width:240px}
+th{top:0}
 select,input{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:#fff}
 .hbar{display:grid;grid-template-columns:minmax(160px,42%) 1fr;gap:6px 10px;align-items:center;font-size:13px}
 .hbar .t{text-align:right;color:var(--fg)}
@@ -51,6 +57,19 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
   <h1>P26129 Industry Survey F2F – QC data</h1>
   <div class="meta" id="snap">Đang tải dữ liệu từ Google Sheet…</div>
 </header>
+<nav class="fbar">
+  <div class="fin">
+    <select id="f-city"><option value="">Mọi thành phố</option></select>
+    <select id="f-pvv"><option value="">Mọi PVV</option></select>
+    <select id="f-date"><option value="">Mọi ngày</option></select>
+    <select id="f-group"><option value="">Mọi nhóm check</option><option>Logic giữa câu</option><option>So với thực tế</option></select>
+    <select id="f-sev"><option value="">Mọi mức độ</option><option>Cao</option><option>Trung bình</option><option>Thấp</option><option>Theo dõi</option></select>
+    <select id="f-check"><option value="">Mọi loại lỗi</option></select>
+    <input id="f-id" placeholder="Mã bài (SbjNum)" size="15">
+    <button id="f-clear" type="button">Xoá lọc</button>
+    <span id="f-note"></span>
+  </div>
+</nav>
 <main>
   <p class="lead" id="lead">—</p>
 
@@ -99,15 +118,7 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
 
   <section class="card">
     <h2>Danh sách lỗi chi tiết</h2>
-    <p class="sub">Lọc theo PVV, thành phố, nhóm check, mức độ hoặc mã bài. Sắp theo mức độ.</p>
-    <div class="filters">
-      <select id="f-pvv"><option value="">Mọi PVV</option></select>
-      <select id="f-city"><option value="">Mọi thành phố</option></select>
-      <select id="f-group"><option value="">Mọi nhóm check</option><option>Logic giữa câu</option><option>So với thực tế</option></select>
-      <select id="f-sev"><option value="">Mọi mức độ</option><option>Cao</option><option>Trung bình</option><option>Thấp</option><option>Theo dõi</option></select>
-      <select id="f-check"><option value="">Mọi loại lỗi</option></select>
-      <input id="f-id" placeholder="Mã bài (SbjNum)" size="16">
-    </div>
+    <p class="sub">Theo bộ lọc ở đầu trang. Sắp theo mức độ.</p>
     <p class="sub">Đang hiện <b id="d-count">—</b> lỗi.</p>
     <div class="tw"><table id="detail"><thead><tr><th>Mã bài</th><th>PVV</th><th>Thành phố</th><th>Mức độ</th><th>Nhóm</th><th>Lỗi</th><th>Chi tiết</th></tr></thead><tbody></tbody></table></div>
   </section>
@@ -205,9 +216,27 @@ async function load() {
 }
 load(); setInterval(load, REFRESH_MIN * 60e3);
 
+const FILTERS = ['#f-city', '#f-pvv', '#f-date', '#f-group', '#f-sev', '#f-check', '#f-id'];
+let DATA = null;
+function rerender() { if (DATA) render(DATA.I, DATA.F); }
+function setFilter(sel, v) { $(sel).value = v; rerender(); }
+FILTERS.forEach(s => { const el = $(s); el[el.tagName === 'INPUT' ? 'oninput' : 'onchange'] = rerender; });
+$('#f-clear').onclick = () => { FILTERS.forEach(s => $(s).value = ''); rerender(); };
 function render(I, F) {
-  const iv = I.rows.filter(r => !r.test);
-  const fl = F.rows.filter(f => f.pvv !== 'TEST');
+  DATA = {I, F};
+  const cityOf = r => r.a1 || r.city;
+  const ivAll = I.rows.filter(r => !r.test), flAll = F.rows.filter(f => f.pvv !== 'TEST');
+  const opts = (sel, vals, sort = true) => { const el = $(sel), keep = el.value; while (el.options.length > 1) el.remove(1); let v = [...new Set(vals)]; if (sort) v.sort(); for (const x of v) el.add(new Option(x, x)); el.value = [...el.options].some(o => o.value === keep) ? keep : ''; };
+  opts('#f-city', CITIES.filter(c => ivAll.some(r => cityOf(r) === c)), false);
+  opts('#f-pvv', ivAll.filter(r => !$('#f-city').value || cityOf(r) === $('#f-city').value).map(r => r.pvv).sort((a, b) => a.localeCompare(b, 'vi', {numeric: true})), false);
+  opts('#f-date', ivAll.map(r => r.date).sort().reverse(), false); opts('#f-check', flAll.map(f => f.check));
+  const v = Object.fromEntries(FILTERS.map(s => [s.slice(3), $(s).value.trim()]));
+  FILTERS.forEach(s => $(s).classList.toggle('on', !!$(s).value.trim()));
+  const iv = ivAll.filter(r => (!v.city || cityOf(r) === v.city) && (!v.pvv || r.pvv === v.pvv) && (!v.date || r.date === v.date) && (!v.id || r.id.includes(v.id)));
+  const ids = new Set(iv.map(r => r.id));
+  const fl = flAll.filter(f => ids.has(f.id) && (!v.group || f.group === v.group) && (!v.sev || f.severity === v.sev) && (!v.check || f.check === v.check));
+  const nOn = FILTERS.filter(s => $(s).value.trim()).length;
+  $('#f-note').textContent = nOn ? `Đang lọc: ${iv.length}/${ivAll.length} bài, ${fl.length} lỗi` : '';
 
   // KPI
   const nHigh = iv.filter(r => r.n_high > 0).length;
@@ -232,7 +261,7 @@ function render(I, F) {
     const e = document.createElement('em'); e.textContent = c.n + ' bài · ' + c.severity;
     b.append(r, e); hb.append(t, b);
     t.style.cursor = b.style.cursor = 'pointer';
-    t.onclick = b.onclick = () => { $('#f-check').value = c.check; drawDetail(); $('#detail').scrollIntoView({behavior: 'smooth'}); };
+    t.onclick = b.onclick = () => { setFilter('#f-check', c.check); $('#detail').scrollIntoView({behavior: 'smooth'}); };
   }
 
   // By PVV
@@ -255,7 +284,7 @@ function render(I, F) {
     const tb = $('#pvv tbody'); tb.replaceChildren();
     for (const r of pvv) {
       const tr = tb.insertRow();
-      const c0 = td(tr, r.pvv); c0.style.cursor = 'pointer'; c0.style.textDecoration = 'underline'; c0.onclick = () => { $('#f-pvv').value = r.pvv; drawDetail(); $('#detail').scrollIntoView({behavior: 'smooth'}); };
+      const c0 = td(tr, r.pvv); c0.style.cursor = 'pointer'; c0.style.textDecoration = 'underline'; c0.onclick = () => { setFilter('#f-pvv', r.pvv); };
       td(tr, r.city); td(tr, r.n, 'n');
       td(tr, r.avg_min, 'n' + (r.avg_min != null && r.avg_min < 35 ? ' hot' : ''));
       td(tr, r.short, 'n' + (r.short > 0 ? ' hot' : ''));
@@ -273,7 +302,6 @@ function render(I, F) {
   $('#lead').append(bh, ` trên ${iv.length} bài có ít nhất một lỗi mức Cao. PVV cần xem trước: `, worst.length ? worst.map(r => `${r.pvv} (${r.flags_per_iv} lỗi/bài)`).join(', ') : 'chưa có', '.');
 
   // City (theo A1, nếu thiếu thì theo link)
-  const cityOf = r => r.a1 || r.city;
   const ct = $('#city tbody'); ct.replaceChildren();
   for (const [city, q] of Object.entries(CITYQ)) {
     const rs = iv.filter(r => cityOf(r) === city), n = rs.length, m = rs.map(r => r.minutes).filter(x => x != null);
@@ -305,23 +333,15 @@ function render(I, F) {
   }
 
   // Detail
-  const opts = (sel, vals) => { const keep = sel.value; while (sel.options.length > 1) sel.remove(1); for (const v of [...new Set(vals)].sort()) sel.add(new Option(v, v)); sel.value = [...sel.options].some(o => o.value === keep) ? keep : ''; };
-  opts($('#f-pvv'), fl.map(f => f.pvv)); opts($('#f-city'), fl.map(f => f.city)); opts($('#f-check'), fl.map(f => f.check));
-  ['#f-pvv', '#f-city', '#f-group', '#f-sev', '#f-check'].forEach(s => $(s).onchange = drawDetail); $('#f-id').oninput = drawDetail;
-  function drawDetail() {
-    const P = $('#f-pvv').value, C = $('#f-city').value, G = $('#f-group').value, S = $('#f-sev').value, K = $('#f-check').value, Q = $('#f-id').value.trim();
-    const rows = fl.filter(f => (!P || f.pvv === P) && (!C || f.city === C) && (!G || f.group === G) && (!S || f.severity === S) && (!K || f.check === K) && (!Q || f.id.includes(Q)))
-      .sort((a, b) => SEVW[b.severity] - SEVW[a.severity] || a.pvv.localeCompare(b.pvv) || a.id.localeCompare(b.id));
-    $('#d-count').textContent = rows.length;
-    const tb = $('#detail tbody'); tb.replaceChildren();
-    if (!rows.length) { td(tb.insertRow(), 'Không có lỗi nào với bộ lọc này.'); return; }
-    for (const f of rows) {
-      const tr = tb.insertRow(); td(tr, f.id); td(tr, f.pvv); td(tr, f.city);
-      const c = tr.insertCell(), p = document.createElement('span'); p.className = 'pill sev-' + f.severity.split(' ')[0]; p.textContent = f.severity; c.appendChild(p);
-      td(tr, f.group); td(tr, f.check); td(tr, f.detail);
-    }
+  const rows = [...fl].sort((a, b) => SEVW[b.severity] - SEVW[a.severity] || a.pvv.localeCompare(b.pvv) || a.id.localeCompare(b.id));
+  $('#d-count').textContent = rows.length;
+  const tb = $('#detail tbody'); tb.replaceChildren();
+  if (!rows.length) td(tb.insertRow(), 'Không có lỗi nào với bộ lọc này.');
+  for (const f of rows) {
+    const tr = tb.insertRow(); td(tr, f.id); td(tr, f.pvv); td(tr, f.city);
+    const c = tr.insertCell(), p = document.createElement('span'); p.className = 'pill sev-' + f.severity.split(' ')[0]; p.textContent = f.severity; c.appendChild(p);
+    td(tr, f.group); td(tr, f.check); td(tr, f.detail);
   }
-  window.drawDetail = drawDetail; drawDetail();
 }
 </script>
 </body>
