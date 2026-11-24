@@ -27,7 +27,7 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertic
 th{color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap;background:#fafbfc;position:sticky;top:0}
 th.sort{cursor:pointer}
 td.n,th.n{text-align:right}
-.hot{color:var(--bad);font-weight:600}.warm{color:var(--warn);font-weight:600}
+.hot{color:var(--bad);font-weight:600}.good{color:var(--ok);font-weight:600}.warm{color:var(--warn);font-weight:600}
 .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;border:1px solid var(--line);white-space:nowrap}
 .sev-Cao{color:var(--bad);border-color:var(--bad)}.sev-Trung{color:var(--warn);border-color:var(--warn)}.sev-Thấp{color:var(--muted)}.sev-Theo{color:var(--accent);border-color:var(--accent2)}
 .bar{height:8px;background:#edf0f4;border-radius:4px;overflow:hidden;min-width:90px}.bar span{display:block;height:100%}
@@ -55,7 +55,7 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
   <p class="lead" id="lead">—</p>
 
   <section class="tiles">
-    <div class="card tile"><div class="lbl">Số bài hoàn thành</div><div class="val" id="k-n">—</div><div class="note">Quota tổng 400 · không tính test</div></div>
+    <div class="card tile"><div class="lbl">Số bài hoàn thành</div><div class="val" id="k-n">—</div><div class="note">Quota tổng 450 · không tính test</div></div>
     <div class="card tile"><div class="lbl">Bài có lỗi mức Cao</div><div class="val" id="k-high">—</div><div class="note" id="k-highn">—</div></div>
     <div class="card tile"><div class="lbl">Tổng số lỗi</div><div class="val" id="k-flags">—</div><div class="note">Mọi mức độ</div></div>
     <div class="card tile"><div class="lbl">Thời lượng trung vị</div><div class="val" id="k-min">—</div><div class="note">Phút, từ câu đầu đến câu cuối</div></div>
@@ -79,17 +79,22 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
     </tr></thead><tbody></tbody></table></div>
   </section>
 
-  <section class="grid2">
-    <div class="card">
-      <h2>Theo thành phố</h2>
-      <p class="sub">Tiến độ so với quota (HCM 175, HN 175, ĐN 50) và chất lượng. Thành phố theo link phỏng vấn.</p>
-      <div class="tw"><table id="city"><thead><tr><th>Thành phố</th><th class="n">Bài</th><th class="n">Quota</th><th>Tiến độ</th><th class="n">TB phút</th><th class="n">% lỗi Cao</th><th class="n">% quản lý</th><th class="n">Link ≠ A1</th></tr></thead><tbody></tbody></table></div>
-    </div>
-    <div class="card">
-      <h2>Quota khác</h2>
-      <p class="sub">Theo QNR: tối thiểu, tối đa hoặc mục tiêu trên tổng 400 mẫu. Đỏ: đã vượt mức tối đa.</p>
-      <div class="tw"><table id="quota"><thead><tr><th>Chỉ tiêu</th><th>Loại</th><th class="n">Hiện có</th><th class="n">Quota</th><th>Tiến độ</th></tr></thead><tbody></tbody></table></div>
-    </div>
+  <section class="card">
+    <h2>Theo thành phố</h2>
+    <p class="sub">Tiến độ so với quota thành phố (A1: HCM 200, HN 200, ĐN 50) và chất lượng. Cột “Link ≠ A1”: số bài mà link phỏng vấn thuộc thành phố khác câu A1.</p>
+    <div class="tw"><table id="city"><thead><tr><th>Thành phố (A1)</th><th class="n">Bài</th><th class="n">Quota</th><th>Tiến độ</th><th class="n">TB phút</th><th class="n">% lỗi Cao</th><th class="n">% quản lý</th><th class="n">Link ≠ A1</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Quota theo file Quota All City (20/11)</h2>
+    <p class="sub">Mỗi ô: hiện có / quota. Xanh: đã đủ quota hoặc mức tối thiểu · Đỏ: vượt mức tối đa · Cam: sắp chạm mức tối đa (từ 80%). Thành phố theo câu A1.</p>
+    <div class="tw"><table id="quota"><thead><tr><th>Câu</th><th>Chỉ tiêu</th><th>Loại</th><th class="n">Tổng</th><th>Tiến độ tổng</th><th class="n">HCM</th><th class="n">HN</th><th class="n">ĐN</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Loại hình sở hữu trong từng ngành (A11 × A8)</h2>
+    <p class="sub">Tỷ lệ tối thiểu trong mỗi ngành A8: FDI / đa quốc gia + liên doanh ≥ 30%, tư nhân Việt Nam ≥ 40%, nhà nước / khu vực công ≥ 10%. Chỉ tô đỏ khi ngành có từ 10 bài trở lên.</p>
+    <div class="tw"><table id="own"><thead><tr><th>Ngành (A8)</th><th class="n">Bài</th><th class="n">FDI + liên doanh</th><th class="n">Tư nhân VN</th><th class="n">Nhà nước</th><th class="n">Phi lợi nhuận</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <section class="card">
@@ -113,6 +118,7 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
       <li><b>Logic giữa câu:</b> lẽ ra bị screen out (A1, A2, A3, A5, A6, A9, A10, B4 = Không rõ); sai nhánh A4 → A5/A6; B1 dưới 3 vị trí; B5 không đúng 3 hoặc ngoài B1; C1 ngoài 0–98/99; C2/C3 hỏi sai thẻ theo C1; C1 lớn hơn hẳn quy mô B4 (gấp hơn 2 lần và hơn ít nhất 5 người); C6 so với C4; D3 khi D2 = 96; D5 so với D4; D7/D8 so với D6; D7 chỉ nhập 1 ngành (không tính khi đã ghi “X kết hợp Y”, “X và Y”…) hoặc 2 ngành trùng nhau; E2 so với E1; module H sai base; phòng ban (B4) lớn hơn công ty (A10); F2 so với C2.</li>
       <li><b>So với thực tế:</b> phỏng vấn dưới 25 phút; bắt đầu trước 7h hoặc sau 22h; lương khởi điểm từ 40 triệu; tuyển từ 30 người mới/12 tháng ở công ty dưới 200 người; dự kiến tuyển trên 20 người mới/năm ở công ty dưới 50 người; C3a chấm toàn 1 hoặc toàn 5; D1–D3 quá ngắn hoặc vô nghĩa; D1 cùng một chức danh cụ thể cho mọi vị trí; từ 6 câu “Không rõ”; SĐT không đủ 10 số; trùng SĐT với bài khác; cùng PVV phỏng vấn nhiều người cùng công ty hoặc cùng tên đường; link thành phố khác A1.</li>
       <li><b>Không báo lỗi vì vẫn hợp lý:</b> mở bài nhiều phiên; phỏng vấn dài; C1 hơi lớn hơn B4 (có thể do nghỉ việc, tuyển thay); quản lý có kế hoạch tuyển nhưng không tuyển người mới tốt nghiệp; nhân viên tự quyết tuyển ở công ty nhỏ; 3–5 năm kinh nghiệm mà là chủ DN/GĐ; C3a chấm cùng một mức 2–4; D1 dùng chức danh theo cấp bậc (nhân viên, trưởng phòng…) cho mọi vị trí; D2/D3 cùng ngành cho mọi vị trí. B1 dùng 2–3 ô Khác chỉ theo dõi ở bảng quota.</li>
+      <li><b>Quota</b> lấy theo file “P26129 - INDUSTRY SURVEY F2F - Quota All City 20Nov.xlsx”: thành phố HCM 200, HN 200, ĐN 50; chia theo thành phố cho A2, A4, A7, A8, A10, B1; tối thiểu mỗi code IT (6/7/8) là 2, mỗi code xây dựng (16/17) là 6, mỗi job A7 còn lại là 5; tỷ lệ loại hình sở hữu A11 tính trong từng ngành A8.</li>
       <li><b>Mức độ:</b> Cao = gần như chắc chắn sai, cần sửa hoặc gọi lại · Trung bình = nghi vấn, cần kiểm tra · Thấp = lưu ý · Theo dõi = để theo dõi quota.</li>
       <li>Dashboard đọc thẳng Google Sheet mỗi lần mở và tự làm mới mỗi 5 phút. Tên, SĐT, địa chỉ, tên công ty của đáp viên chỉ dùng để tìm trùng lặp, không hiện trên trang.</li>
     </ul>
@@ -122,28 +128,32 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
 <script src="qc.js"></script>
 <script>
 const SEVW = {'Cao': 3, 'Trung bình': 2, 'Thấp': 1, 'Theo dõi': 0};
-const CITYQ = {'TP. Hồ Chí Minh': 175, 'Hà Nội': 175, 'Đà Nẵng': 50};
+// Quota theo file “P26129 - INDUSTRY SURVEY F2F - Quota All City 20Nov.xlsx”. [tổng, HCM, HN, ĐN]
+const CITIES = ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng'];
+const CITYQ = {'TP. Hồ Chí Minh': 200, 'Hà Nội': 200, 'Đà Nẵng': 50};
+const A7_LABEL = {1: 'Tài chính / Kế toán', 3: 'Marketing / Truyền thông / Sự kiện', 4: 'Sáng tạo và nghệ thuật', 5: 'Kinh doanh / Sales', 9: 'Sản xuất', 10: 'Kỹ thuật', 11: 'Pháp lý', 12: 'Vận hành', 13: 'Nghiên cứu và phát triển', 14: 'Dịch vụ khách hàng'};
+const A8_LABEL = {1: 'IT, data và AI', 2: 'Ngân hàng, tài chính, bảo hiểm', 3: 'Sản xuất, công nghiệp nặng', 4: 'FMCG', 5: 'Du lịch, nhà hàng, khách sạn', 6: 'Giải trí, sự kiện', 7: 'Hàng không, UAV', 8: 'Logistics, chuỗi cung ứng', 9: 'Bán dẫn, điện tử', 10: 'Robot, ô tô, giao thông điện', 11: 'Xây dựng, BĐS, kiến trúc', 12: 'Thiết kế, marketing, truyền thông', 13: 'Y tế, thiết bị y tế, tâm lý', 14: 'Năng lượng, môi trường', 15: 'Kỹ thuật, R&D', 97: 'Ngành khác'};
 const QUOTA = [
-  ['Quản lý trở lên (A4 = 3–5)', 'Mục tiêu', 150, r => r.a4 >= 3],
-  ['Kinh nghiệm 10+ năm (A2 = 6–7)', 'Mục tiêu', 150, r => r.a2 >= 6 && r.a2 <= 7],
-  ['A7 Nhân sự / tuyển dụng', 'Mục tiêu', 30, r => r.a7 === 2],
-  ['A7 Công nghệ thông tin', 'Mục tiêu', 50, r => r.a7 === 6],
-  ['A7 Y tế / sức khoẻ tâm lý', 'Mục tiêu', 30, r => r.a7 === 15],
-  ['A7 Xây dựng / quy hoạch', 'Mục tiêu', 50, r => r.a7 === 16],
-  ['A7 Khác', 'Tối đa', 50, r => r.a7 === 97],
-  ['A8 Xây dựng, BĐS, kiến trúc', 'Tối thiểu', 50, r => r.a8 === 11],
-  ['A8 CNTT, dữ liệu, AI', 'Tối thiểu', 30, r => r.a8 === 1],
-  ['A8 Ngân hàng, tài chính, bảo hiểm', 'Tối thiểu', 30, r => r.a8 === 2],
-  ['A8 Sản xuất, công nghiệp nặng', 'Tối thiểu', 30, r => r.a8 === 3],
-  ['A8 Logistics, chuỗi cung ứng', 'Tối thiểu', 30, r => r.a8 === 8],
-  ['A8 Robot, ô tô, giao thông điện', 'Tối thiểu', 30, r => r.a8 === 10],
-  ['A8 Y tế, thiết bị y tế, tâm lý', 'Tối thiểu', 30, r => r.a8 === 13],
-  ['A8 Năng lượng, môi trường', 'Tối thiểu', 30, r => r.a8 === 14],
-  ['A8 Kỹ thuật, R&D', 'Tối thiểu', 30, r => r.a8 === 15],
-  ['A8 Lĩnh vực khác', 'Tối đa', 30, r => r.a8 === 97],
-  ['A10 Dưới 20 người', 'Tối đa', 40, r => r.a10 === 1],
-  ['A10 20–49 người', 'Tối đa', 80, r => r.a10 === 2],
-  ['B1 dùng 2–3 ô Khác', 'Tối đa', 50, r => r.b1_other >= 2],
+  ['A2', 'Kinh nghiệm 10 năm trở lên (code 6–7)', 'Quota', [170, 77, 77, 16], r => r.a2 === 6 || r.a2 === 7],
+  ['A4', 'Manager trở lên (code 3–5)', 'Quota', [170, 77, 77, 16], r => r.a4 >= 3 && r.a4 <= 5],
+  ['A7', 'Nhân sự / HR (code 2)', 'Quota', [35, 15, 15, 5], r => r.a7 === 2],
+  ['A7', 'IT (code 6/7/8)', 'Quota', [60, 26, 26, 8], r => [6, 7, 8].includes(r.a7)],
+  ['A7', '  · Phát triển phần mềm/CNTT (code 6)', 'Min', [2], r => r.a7 === 6],
+  ['A7', '  · Phát triển sản phẩm công nghệ (code 7)', 'Min', [2], r => r.a7 === 7],
+  ['A7', '  · Dữ liệu và AI (code 8)', 'Min', [2], r => r.a7 === 8],
+  ['A7', 'Y tế / sức khỏe tâm thần (code 15)', 'Quota', [60, 26, 26, 8], r => r.a7 === 15],
+  ['A7', 'Xây dựng / Quy hoạch (code 16/17)', 'Quota', [35, 22, 22, 6], r => r.a7 === 16 || r.a7 === 17],
+  ['A7', '  · Xây dựng / Quy hoạch (code 16)', 'Min', [6], r => r.a7 === 16],
+  ['A7', '  · Kiến trúc – Thiết kế (code 17)', 'Min', [6], r => r.a7 === 17],
+  ...Object.entries(A7_LABEL).map(([c, l]) => ['A7', `${l} (code ${c})`, 'Min', [5, 2, 2, 1], r => r.a7 === +c]),
+  ['A7', 'Khác (code 97)', 'Max', [50, 22, 22, 6], r => r.a7 === 97],
+  ['A8', 'Xây dựng, BĐS, kiến trúc (code 11)', 'Min', [60, 26, 26, 8], r => r.a8 === 11],
+  ...[1, 2, 3, 8, 10, 13, 14, 15].map(c => ['A8', `${A8_LABEL[c]} (code ${c})`, 'Min', [35, 15, 15, 5], r => r.a8 === c]),
+  ['A8', 'Ngành khác (code 97)', 'Max', [35, 15, 15, 5], r => r.a8 === 97],
+  ['A8', 'FMCG, du lịch, giải trí, hàng không, bán dẫn, design/media (code 4/5/6/7/9/12)', 'Max', [50, 22, 22, 6], r => [4, 5, 6, 7, 9, 12].includes(r.a8)],
+  ['A10', 'Dưới 20 nhân viên (code 1)', 'Max', [45, 20, 20, 5], r => r.a10 === 1],
+  ['A10', '20–49 nhân viên (code 2)', 'Max', [90, 40, 40, 10], r => r.a10 === 2],
+  ['B1', 'Dùng 2–3 ô Khác (code 95–97)', 'Max', [50, 22, 22, 6], r => r.b1_other >= 2],
 ];
 const $ = s => document.querySelector(s);
 const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
@@ -262,20 +272,36 @@ function render(I, F) {
   const bh = document.createElement('b'); bh.textContent = nHigh;
   $('#lead').append(bh, ` trên ${iv.length} bài có ít nhất một lỗi mức Cao. PVV cần xem trước: `, worst.length ? worst.map(r => `${r.pvv} (${r.flags_per_iv} lỗi/bài)`).join(', ') : 'chưa có', '.');
 
-  // City
+  // City (theo A1, nếu thiếu thì theo link)
+  const cityOf = r => r.a1 || r.city;
   const ct = $('#city tbody'); ct.replaceChildren();
   for (const [city, q] of Object.entries(CITYQ)) {
-    const rs = iv.filter(r => r.city === city), n = rs.length, m = rs.map(r => r.minutes).filter(x => x != null);
+    const rs = iv.filter(r => cityOf(r) === city), n = rs.length, m = rs.map(r => r.minutes).filter(x => x != null);
     const tr = ct.insertRow(); td(tr, city); td(tr, n, 'n'); td(tr, q, 'n'); bar(tr, Math.round(n / q * 100), 'Mục tiêu');
     td(tr, m.length ? Math.round(mean(m)) : null, 'n');
     td(tr, n ? Math.round(rs.filter(r => r.n_high > 0).length / n * 100) + '%' : '—', 'n');
     td(tr, n ? Math.round(rs.filter(r => r.a4 >= 3).length / n * 100) + '%' : '—', 'n');
-    const mm = rs.filter(r => r.a1 && r.a1 !== city).length; td(tr, mm, 'n' + (mm ? ' hot' : ''));
+    const mm = rs.filter(r => r.a1 && r.city && r.a1 !== r.city).length; td(tr, mm, 'n' + (mm ? ' hot' : ''));
   }
-  const qt = $('#quota tbody'); qt.replaceChildren();
-  for (const [name, loai, target, f] of QUOTA) {
-    const n = iv.filter(f).length, tr = qt.insertRow();
-    td(tr, name); td(tr, loai); td(tr, n, 'n' + (loai === 'Tối đa' && n > target ? ' hot' : '')); td(tr, target, 'n'); bar(tr, Math.round(n / target * 100), loai);
+  const qcls = (n, q, loai) => q == null ? '' : loai === 'Max' ? (n > q ? ' hot' : n >= q * 0.8 ? ' warm' : '') : (n >= q ? ' good' : '');
+  const qt = $('#quota tbody'); qt.replaceChildren(); let lastQ = '';
+  for (const [q, name, loai, T, f] of QUOTA) {
+    const rs = iv.filter(f), n = rs.length, tr = qt.insertRow();
+    td(tr, q === lastQ ? '\u00a0' : q); lastQ = q; const nc = td(tr, name.trim()); if (name.startsWith('  ')) nc.style.paddingLeft = '22px';
+    td(tr, loai === 'Quota' ? 'Quota' : loai === 'Min' ? 'Tối thiểu' : 'Tối đa');
+    td(tr, `${n} / ${T[0]}`, 'n' + qcls(n, T[0], loai)); bar(tr, Math.round(n / T[0] * 100), loai === 'Max' ? 'Tối đa' : 'Mục tiêu');
+    CITIES.forEach((c, i) => { const t = T[i + 1], k = rs.filter(r => cityOf(r) === c).length; td(tr, t == null ? k : `${k} / ${t}`, 'n' + qcls(k, t, loai)); });
+  }
+  // A11 × A8
+  const ot = $('#own tbody'); ot.replaceChildren();
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  for (const c of Object.keys(A8_LABEL).map(Number)) {
+    const rs = iv.filter(r => r.a8 === c), n = rs.length; if (!n) continue;
+    const tr = ot.insertRow(); td(tr, `${A8_LABEL[c]} (code ${c})`); td(tr, n, 'n');
+    for (const [codes, min] of [[[1, 2], 30], [[3], 40], [[4], 10], [[5], null]]) {
+      const p = pct(rs.filter(r => codes.includes(r.a11)).length, n);
+      td(tr, p + '%' + (min ? ` (≥${min}%)` : ''), 'n' + (min && p < min && n >= 10 ? ' hot' : min && p >= min ? ' good' : ''));
+    }
   }
 
   // Detail
