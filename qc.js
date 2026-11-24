@@ -7,6 +7,8 @@
   const A10_TOP = {1: 19, 2: 49, 3: 199, 4: 499, 5: 1999, 6: null};
   const C5_MID = {1: 0, 2: 1.5, 3: 4, 4: 8, 5: 15, 6: 35, 7: 50};
   const JUNK = new Set(['', 'khong', 'ko', 'k', 'x', 'xx', '.', '-', 'na', 'n/a', 'khong biet', 'kb', 'abc']);
+  // Chức danh chung theo cấp bậc (nhân viên, trưởng phòng…) dùng chung cho nhiều vị trí là hợp lý
+  const GENERIC_TITLE = /^(nhan vien|chuyen vien|chuyen gia|thuc tap sinh|truong nhom|truong phong|pho phong|quan ly|giam doc|pho giam doc|team leader|leader|manager|staff|executive|specialist|intern|supervisor|giam sat)( .{0,15})?$/;
   const SEVW = {'Cao': 3, 'Trung bình': 2, 'Thấp': 1, 'Theo dõi': 0};
   const LG = 'Logic giữa câu', RG = 'So với thực tế';
 
@@ -97,7 +99,6 @@
       if ([3, 4, 5].includes(A4) && A6 == null) flag(LG, 'Sai nhánh A4 → A5/A6', 'Cao', `A4=${A4} nhưng không có A6`);
       const oth = B1.filter((x) => !(x.text || '').startsWith('RF'));
       if (B1.length < 3) flag(LG, 'B1 chọn dưới 3 vị trí', 'Cao', `B1 có ${B1.length} vị trí`);
-      if (oth.length >= 2) flag(LG, 'B1 dùng 2–3 ô Khác (quota max 50)', 'Theo dõi', `${oth.length} ô Khác: ` + oth.map((x) => (x.oth || '').slice(0, 40)).join('; '));
       const b1t = new Set(B1.map((x) => x.text));
       if (B5.length !== 3) flag(LG, 'B5 không đúng 3 vị trí', 'Cao', `B5 có ${B5.length} vị trí`);
       if (B5.some((x) => !b1t.has(x.text))) flag(LG, 'B5 ngoài danh sách B1', 'Cao', 'Có vị trí ở B5 không chọn ở B1');
@@ -107,14 +108,13 @@
       for (const [k, v] of Object.entries(C1)) {
         if (v != null && v >= 1 && v <= 98 && !(k in C3)) flag(LG, 'Thiếu C3 cho thẻ C1 1–98', 'Cao', `${short(k)}: C1=${v}`);
         const top = B4_TOP[B4[k]];
-        if (v != null && v !== 99 && top != null && v > top) flag(LG, 'C1 lớn hơn quy mô B4', 'Trung bình', `${short(k)}: C1=${v} người nhưng B4 tối đa ${top}`);
+        if (v != null && v !== 99 && top != null && v > top * 2 && v - top >= 5) flag(LG, 'C1 lớn hơn hẳn quy mô B4', 'Trung bình', `${short(k)}: C1=${v} người nhưng B4 tối đa ${top}`);
       }
       for (const [k, c4] of Object.entries(C4)) {
         if (c4 === 3 && (C6[k] || []).length) flag(LG, 'C6 hỏi thẻ có C4 = Giữ nguyên', 'Cao', short(k));
         if ([1, 2, 4, 5].includes(c4) && !(k in C6)) flag(LG, 'Thiếu C6 cho thẻ có thay đổi', 'Cao', `${short(k)}: C4=${c4}`);
       }
       const c5v = Object.values(C5);
-      if (A6 === 1 && c5v.length && c5v.every((v) => v === 1)) flag(LG, 'Quản lý có kế hoạch tuyển nhưng C5 = Không tuyển hết', 'Trung bình', 'A6=Có, C5=Không tuyển ở cả 3 vị trí');
       for (const k of Object.keys(D3)) if ((D2[k] || []).includes(96)) flag(LG, 'D3 hỏi thẻ D2 = Ngành nào cũng được', 'Cao', short(k));
       for (const k of Object.keys(D5)) if (![1, 2].includes(D4[k])) flag(LG, 'D5 có chương trình không chấm 1–2 ở D4', 'Cao', `${short(k).slice(0, 40)} (D4=${D4[k] != null ? D4[k] : 'không có thẻ'})`);
       for (const [k, v] of Object.entries(D4)) if ([1, 2].includes(v) && !(k in D5)) flag(LG, 'Thiếu D5 cho chương trình D4 1–2', 'Cao', short(k).slice(0, 30));
@@ -123,7 +123,8 @@
       for (const [k, v] of Object.entries(a.D7 || {})) {
         const n = {}; for (const x of v || []) if (x.oth) n[x.text] = norm(x.oth);
         const vals = Object.values(n);
-        if (vals.length === 1 && !(v || []).some((x) => x.code === '98')) flag(LG, 'D7 chỉ nhập 1 ngành', 'Trung bình', short(k));
+        const pairInOne = vals.length === 1 && /kết hợp|ket hop|\bvà\b|\bva\b|\+|&|,|\//.test(vals[0]);
+        if (vals.length === 1 && !pairInOne && !(v || []).some((x) => x.code === '98')) flag(LG, 'D7 chỉ nhập 1 ngành', 'Thấp', `${short(k)}: ${vals[0]}`);
         if (vals.length === 2 && vals[0] === vals[1]) flag(LG, 'D7 hai ngành trùng nhau', 'Trung bình', `${short(k)}: ${vals[0]}`);
       }
       for (const [k, v] of Object.entries(E2)) if (v.length && ![1, 2].includes(E1[k])) flag(LG, 'E2 không khớp E1', 'Cao', short(k));
@@ -132,8 +133,6 @@
       if (hasH1 !== mod1) flag(LG, 'Module H1–H3 sai base', 'Cao', `A8=${A8}, A7=${A7}, có H1=${hasH1}`);
       const H4 = codes(a, 'H4'), hasH5 = !!(a.H5 && Object.keys(a.H5).length);
       if (hasH5 !== (A8 === 13 || H4.includes(1))) flag(LG, 'H5 sai base', 'Cao', `A8=${A8}, H4=[${H4}]`);
-      if ([1, 2].includes(A4) && A9.includes(1)) flag(LG, 'Nhân viên nhưng “quyết định tuyển ai”', 'Thấp', `A4=${A4}, A9 có code 1`);
-      if (A2 === 4 && [4, 5].includes(A4)) flag(LG, 'Kinh nghiệm 3–5 năm nhưng cấp GĐ/CEO', 'Thấp', `A2=4, A4=${A4}`);
       if (A10_TOP[A10]) {
         const big = Object.entries(B4).filter(([, b]) => B4_LOW[b] > A10_TOP[A10]).map(([k]) => short(k));
         if (big.length) flag(LG, 'Phòng ban (B4) lớn hơn cả công ty (A10)', 'Cao', `A10 tối đa ${A10_TOP[A10]} người; B4 vượt: ${big.join(', ')}`);
@@ -142,22 +141,22 @@
 
       // ---------- 2. SO VỚI THỰC TẾ ----------
       if (minutes != null && minutes < 25) flag(RG, 'Phỏng vấn quá nhanh (< 25 phút)', 'Cao', `${minutes} phút`);
-      if (minutes != null && minutes > 120) flag(RG, 'Phỏng vấn quá dài (> 120 phút)', 'Thấp', `${minutes} phút, ${row.sessions} phiên`);
-      if (row.sessions >= 3) flag(RG, 'Mở bài nhiều lần (≥ 3 phiên)', 'Trung bình', `${row.sessions} phiên`);
-      if (st.getUTCHours() < 7 || st.getUTCHours() >= 21) flag(RG, 'Phỏng vấn ngoài giờ (trước 7h / sau 21h)', 'Trung bình', row.start);
-      for (const [k, v] of Object.entries(F1)) if (v === 7 || v === 8) flag(RG, 'Lương khởi điểm ≥ 30 triệu', 'Trung bình', `${short(k)}: F1 code ${v}`);
+      if (st.getUTCHours() < 7 || st.getUTCHours() >= 22) flag(RG, 'Phỏng vấn ngoài giờ (trước 7h / sau 22h)', 'Trung bình', row.start);
+      for (const [k, v] of Object.entries(F1)) if (v === 8) flag(RG, 'Lương khởi điểm ≥ 40 triệu', 'Trung bình', short(k));
       for (const [k, v] of Object.entries(C1)) if (v != null && v >= 30 && v <= 98 && (A10 || 0) <= 3) flag(RG, 'Tuyển ≥ 30 người mới/12 tháng ở công ty < 200 người', 'Trung bình', `${short(k)}: C1=${v}, A10=${A10}`);
       const totC5 = c5v.reduce((s, v) => s + (C5_MID[v] || 0), 0);
       if ((A10 === 1 || A10 === 2) && totC5 > 20) flag(RG, 'Dự kiến tuyển > 20 người mới/năm ở công ty < 50 người', 'Trung bình', `≈${Math.round(totC5)} người/năm`);
       const c3a = Object.values(a.Q_28 || {}).filter((v) => v && v[0]).map((v) => v[0].code);
-      if (c3a.length >= 5 && new Set(c3a).size === 1) flag(RG, 'C3a trả lời 1 mức cho mọi kỹ năng', 'Trung bình', `Tất cả = ${c3a[0]}`);
+      if (c3a.length >= 5 && new Set(c3a).size === 1 && ['1', '5'].includes(c3a[0])) flag(RG, 'C3a chấm cùng mức cực (toàn 1 hoặc toàn 5)', 'Thấp', `Tất cả = ${c3a[0]}`);
       for (const q of ['D1', 'D2', 'D3']) {
         const vals = {};
         for (const [k, v] of Object.entries(a[q] || {})) { const t = (v || []).filter((x) => x.oth).map((x) => norm(x.oth)).sort(); if (t.length) vals[k] = t; }
         const ks = Object.keys(vals);
         const bad = ks.filter((k) => vals[k].some((t) => JUNK.has(t) || t.length < 3)).map(short);
         if (bad.length) flag(RG, `${q} câu mở quá ngắn / vô nghĩa`, 'Trung bình', bad.join(', '));
-        if (ks.length >= 2 && new Set(ks.map((k) => JSON.stringify(vals[k]))).size === 1) flag(RG, `${q} chép y hệt cho mọi vị trí`, 'Trung bình', vals[ks[0]].join(' | ').slice(0, 80));
+        const generic = (t) => GENERIC_TITLE.test(t);
+        if (q === 'D1' && ks.length >= 2 && new Set(ks.map((k) => JSON.stringify(vals[k]))).size === 1 && !vals[ks[0]].every(generic))
+          flag(RG, 'D1 cùng một chức danh cụ thể cho mọi vị trí', 'Trung bình', vals[ks[0]].join(' | ').slice(0, 80));
       }
       const dk = Object.values(C1).filter((v) => v === 99).length + ['C2', 'E1', 'F1', 'F2'].reduce((s, q) => s + Object.values(card1(a, q)).filter((v) => v === 99).length, 0);
       row.dont_know = dk;
