@@ -80,7 +80,7 @@ details summary{cursor:pointer;color:var(--muted)}details li{margin:5px 0}
 </nav>
 <main>
   <section class="tiles">
-    <div class="card tile"><div class="lbl">Số bài hoàn thành</div><div class="val" id="k-n">—</div><div class="note">Quota tổng 450 · không tính test</div></div>
+    <div class="card tile"><div class="lbl">Số bài hoàn thành</div><div class="val" id="k-n">—</div><div class="note" id="k-nnote">Quota tổng 450 · không tính test và bài bị huỷ</div></div>
     <div class="card tile"><div class="lbl">Bài có lỗi mức Cao</div><div class="val" id="k-high">—</div><div class="note" id="k-highn">—</div></div>
     <div class="card tile"><div class="lbl">Tổng số lỗi</div><div class="val" id="k-flags">—</div><div class="note">Mọi mức độ</div></div>
     <div class="card tile"><div class="lbl">Thời lượng trung vị</div><div class="val" id="k-min">—</div><div class="note">Phút, từ câu đầu đến câu cuối</div></div>
@@ -266,6 +266,9 @@ function render(I, F) {
   const v = Object.fromEntries(FILTERS.map(s => [s.slice(3), $(s).value.trim()]));
   FILTERS.forEach(s => $(s).classList.toggle('on', !!$(s).value.trim()));
   const iv = ivAll.filter(r => (!v.city || cityOf(r) === v.city) && (!v.pvv || r.pvv === v.pvv) && (!v.date || r.date === v.date) && (!v.id || r.id.includes(v.id)));
+  // Bài QC đã huỷ (Status = Rejected): không tính vào quota/tiến độ, vẫn hiện ở tab Báo lỗi (có ghi "đã huỷ")
+  const isRej = r => /reject/i.test(r.status || '');
+  const ivQ = iv.filter(r => !isRej(r)), rejIds = new Set(iv.filter(isRej).map(r => r.id));
   const ids = new Set(iv.map(r => r.id));
   const fl = flAll.filter(f => ids.has(f.id) && (!v.group || f.group === v.group) && (!v.sev || f.severity === v.sev) && (!v.check || f.check === v.check));
   const nOn = FILTERS.filter(s => $(s).value.trim()).length;
@@ -276,7 +279,8 @@ function render(I, F) {
   const nHigh = iv.filter(r => r.n_high > 0).length;
   const mins = iv.map(r => r.minutes).filter(m => m != null).sort((a, b) => a - b);
   const med = mins.length ? (mins.length % 2 ? mins[(mins.length - 1) / 2] : (mins[mins.length / 2 - 1] + mins[mins.length / 2]) / 2) : null;
-  $('#k-n').textContent = iv.length;
+  $('#k-n').textContent = ivQ.length;
+  $('#k-nnote').textContent = 'Quota tổng 450 · không tính test' + (rejIds.size ? ` và ${rejIds.size} bài bị huỷ` : ' và bài bị huỷ');
   $('#k-high').textContent = iv.length ? Math.round(nHigh / iv.length * 100) + '%' : '—';
   $('#k-highn').textContent = nHigh + ' bài';
   $('#k-flags').textContent = fl.length;
@@ -338,7 +342,7 @@ function render(I, F) {
   // City (theo A1, nếu thiếu thì theo link)
   const ct = $('#city tbody'); ct.replaceChildren();
   for (const [city, q] of Object.entries(CITYQ)) {
-    const rs = iv.filter(r => cityOf(r) === city), n = rs.length, m = rs.map(r => r.minutes).filter(x => x != null);
+    const rs = ivQ.filter(r => cityOf(r) === city), n = rs.length, m = rs.map(r => r.minutes).filter(x => x != null);
     const tr = ct.insertRow(); td(tr, city); td(tr, n, 'n'); td(tr, q, 'n'); bar(tr, Math.round(n / q * 100), 'Mục tiêu');
     td(tr, m.length ? Math.round(mean(m)) : null, 'n');
     td(tr, n ? Math.round(rs.filter(r => r.n_high > 0).length / n * 100) + '%' : '—', 'n');
@@ -348,7 +352,7 @@ function render(I, F) {
   const qcls = (n, q, loai) => q == null ? '' : loai === 'Max' ? (n > q ? ' hot' : n >= q * 0.8 ? ' warm' : '') : (n >= q ? ' good' : '');
   const qt = $('#quota tbody'); qt.replaceChildren(); let lastQ = '';
   for (const [q, name, loai, T, f] of QUOTA) {
-    const rs = iv.filter(f), n = rs.length, tr = qt.insertRow();
+    const rs = ivQ.filter(f), n = rs.length, tr = qt.insertRow();
     td(tr, q === lastQ ? '\u00a0' : q); lastQ = q; const nc = td(tr, name.trim()); if (name.startsWith('  ')) nc.style.paddingLeft = '22px';
     td(tr, loai === 'Quota' ? 'Quota' : loai === 'Min' ? 'Tối thiểu' : 'Tối đa');
     td(tr, `${n} / ${T[0]}`, 'n' + qcls(n, T[0], loai)); bar(tr, Math.round(n / T[0] * 100), loai === 'Max' ? 'Tối đa' : 'Mục tiêu');
@@ -358,7 +362,7 @@ function render(I, F) {
   const ot = $('#own tbody'); ot.replaceChildren();
   const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
   for (const c of Object.keys(A8_LABEL).map(Number)) {
-    const rs = iv.filter(r => r.a8 === c), n = rs.length; if (!n) continue;
+    const rs = ivQ.filter(r => r.a8 === c), n = rs.length; if (!n) continue;
     const tr = ot.insertRow(); td(tr, `${A8_LABEL[c]} (code ${c})`); td(tr, n, 'n');
     for (const [codes, min] of [[[1, 2], 30], [[3], 40], [[4], 10], [[5], null]]) {
       const p = pct(rs.filter(r => codes.includes(r.a11)).length, n);
@@ -372,7 +376,7 @@ function render(I, F) {
   const tb = $('#detail tbody'); tb.replaceChildren();
   if (!rows.length) td(tb.insertRow(), 'Không có lỗi nào với bộ lọc này.');
   for (const f of rows) {
-    const tr = tb.insertRow(); td(tr, f.id); td(tr, f.pvv); td(tr, f.city);
+    const tr = tb.insertRow(); td(tr, rejIds.has(f.id) ? f.id + ' (đã huỷ)' : f.id); td(tr, f.pvv); td(tr, f.city);
     const c = tr.insertCell(), p = document.createElement('span'); p.className = 'pill sev-' + f.severity.split(' ')[0]; p.textContent = f.severity; c.appendChild(p);
     td(tr, f.group); td(tr, f.check); td(tr, f.detail);
   }
