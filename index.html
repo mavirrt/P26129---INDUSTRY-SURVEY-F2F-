@@ -202,6 +202,25 @@ async function fetchSheet(gid) {
   for (const u of urls) { try { const r = await fetch(u + '&_=' + Date.now(), {cache: 'no-store'}); if (!r.ok) throw new Error('HTTP ' + r.status); return parseCSV(await r.text()); } catch (e) { err = e; } }
   throw err;
 }
+// Ghép các batch XML (mỗi batch tối đa 99 bài) thành một tài liệu: lấy batch 1 làm khung,
+// chèn các <Subject> của batch 2, 3… vào trước </SurveyResults> của batch 1.
+function mergeBatches(rows) {
+  const byB = {};
+  rows.forEach((r) => { const b = +r[1] || 0; (byB[b] = byB[b] || []).push(r); });
+  const docs = Object.keys(byB).map(Number).sort((a, b) => a - b)
+    .map((b) => byB[b].sort((x, y) => (+x[2]) - (+y[2])).map((r) => r[3]).join('').replace(/^\uFEFF/, ''));
+  let xml = docs[0];
+  if (docs.length > 1) {
+    const extra = docs.slice(1).map((d) => {
+      const a = d.indexOf('<SurveyResults'), s = d.indexOf('>', a) + 1, e = d.lastIndexOf('</SurveyResults>');
+      return a >= 0 && e > s ? d.slice(s, e) : '';
+    }).join('');
+    const end = xml.lastIndexOf('</SurveyResults>');
+    if (end < 0) throw new Error('XML chưa đầy đủ (có thể Sheet đang sync)');
+    xml = xml.slice(0, end) + extra + xml.slice(end);
+  }
+  return xml;
+}
 let loading = false;
 async function load() {
   if (loading) return; loading = true;
@@ -210,8 +229,8 @@ async function load() {
     const [raw, log] = await Promise.all([fetchSheet(GID_RAW), fetchSheet(GID_LOG).catch(() => [])]);
     const rows = raw.slice(1).filter((r) => r[3]);
     if (!rows.length) throw new Error('Tab Raw_Data trống (có thể đang sync)');
-    const batch = Math.max(...rows.map((r) => +r[1] || 0));
-    const xml = rows.filter((r) => (+r[1] || 0) === batch).sort((a, b) => (+a[2]) - (+b[2])).map((r) => r[3]).join('');
+    // Script tải 99 bài mỗi batch, mỗi batch là một file XML riêng -> ghép tất cả batch lại thành một
+    const xml = mergeBatches(rows);
     const {interviews, flags} = QC.run(xml);
     const last = log.filter((r) => r[0]).pop();
     render({rows: interviews}, {rows: flags});
