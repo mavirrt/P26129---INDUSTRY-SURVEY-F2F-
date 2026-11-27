@@ -1,5 +1,5 @@
 /* QC checks for P26129 Industry Survey F2F — chạy trong trình duyệt.
-   Input: chuỗi XML SurveyToGo (ghép từ các chunk ở tab Raw_Data).
+   Input: QC.runList(danh sách bài từ tab QC_Data) hoặc QC.run(XML SurveyToGo ghép từ tab Raw_Data).
    Output: {interviews, flags}. Tên, SĐT, địa chỉ, công ty chỉ dùng để tìm trùng, không đưa ra ngoài. */
 (function (global) {
   const B4_TOP = {1: 4, 2: 19, 3: 49, 4: 199, 5: null};
@@ -50,16 +50,26 @@
   const cardm = (a, q) => { const o = {}; for (const [k, v] of Object.entries(a[q] || {})) o[k] = (v || []).filter((x) => x.code).map((x) => int(x.code)); return o; };
   const info = (obj, word) => { for (const [k, v] of Object.entries(obj || {})) if (k.toLowerCase().includes(word)) return v || ''; return ''; };
 
+  // Đường cũ: XML thô (Raw_Data) -> danh sách bài {m, a, times}
   function run(xmlText) {
     const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
     if (doc.getElementsByTagName('parsererror').length) throw new Error('XML chưa đầy đủ (có thể Sheet đang sync)');
+    const subs = [];
+    for (const s of doc.getElementsByTagName('Subject')) {
+      if (!s.querySelector(':scope > [Field="SbjNum"]')) continue;
+      const p = parseSubject(s);
+      subs.push({m: p.m, a: p.a, times: p.times.length > 1 ? [+p.times[0], +p.times[p.times.length - 1]] : []});
+    }
+    return runList(subs);
+  }
+
+  // Đường mới: danh sách bài thu gọn (QC_Data). times = [mốc đầu, mốc cuối] (ms) hoặc [] nếu <2 mốc.
+  function runList(subs) {
     const interviews = [], flags = [];
     const phones = new Map(), companies = new Map(), streets = new Map();
     const push = (map, k, v) => { if (!map.has(k)) map.set(k, []); map.get(k).push(v); };
 
-    for (const s of doc.getElementsByTagName('Subject')) {
-      if (!s.querySelector(':scope > [Field="SbjNum"]')) continue;
-      const {m, a, times} = parseSubject(s);
+    for (const {m, a, times} of subs) {
       if (m.Complete && m.Complete !== 'True') continue;
       const sid = m.SbjNum, nam = m.SbjNam || '';
       const test = /^(STGTester|RMIT)$/i.test(nam.trim()) || m.Test === 'True';   // bài test: tài khoản STGTester, RMIT hoặc cờ Test
@@ -186,5 +196,5 @@
     }
     return {interviews, flags};
   }
-  global.QC = {run};
+  global.QC = {run, runList};
 })(typeof window !== 'undefined' ? window : globalThis);

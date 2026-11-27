@@ -222,19 +222,38 @@ function mergeBatches(rows) {
   return xml;
 }
 let loading = false;
+// Ưu tiên tab QC_Data (mỗi bài 1 dòng JSON, nhỏ ~10 lần so với XML); nếu chưa có hoặc rỗng thì dùng Raw_Data (XML thô)
+async function fetchByName(name) {
+  const r = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=0&sheet=${encodeURIComponent(name)}&_=${Date.now()}`, {cache: 'no-store'});
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return parseCSV(await r.text());
+}
+async function loadCompact() {
+  const rows = (await fetchByName('QC_Data')).filter((r) => r[1] && r[1].trim()[0] === '{');
+  if (!rows.length) return null;
+  const subs = rows.map((r) => { try { return JSON.parse(r[1]); } catch (e) { return null; } });
+  if (subs.some((x) => !x || !x.m)) return null;   // có dòng hỏng -> dùng đường XML cho chắc
+  return QC.runList(subs);
+}
+async function loadXml() {
+  const raw = await fetchSheet(GID_RAW);
+  const rows = raw.slice(1).filter((r) => r[3]);
+  if (!rows.length) throw new Error('Tab Raw_Data trống (có thể đang sync)');
+  // Script tải 99 bài mỗi batch, mỗi batch là một file XML riêng -> ghép tất cả batch lại thành một
+  return QC.run(mergeBatches(rows));
+}
 async function load() {
   if (loading) return; loading = true;
   $('#snap').textContent = 'Đang tải dữ liệu từ Google Sheet…';
   try {
-    const [raw, log] = await Promise.all([fetchSheet(GID_RAW), fetchSheet(GID_LOG).catch(() => [])]);
-    const rows = raw.slice(1).filter((r) => r[3]);
-    if (!rows.length) throw new Error('Tab Raw_Data trống (có thể đang sync)');
-    // Script tải 99 bài mỗi batch, mỗi batch là một file XML riêng -> ghép tất cả batch lại thành một
-    const xml = mergeBatches(rows);
-    const {interviews, flags} = QC.run(xml);
+    const logP = fetchSheet(GID_LOG).catch(() => []);
+    let res = null, src = 'QC_Data';
+    try { res = await loadCompact(); } catch (e) { res = null; }
+    if (!res) { src = 'Raw_Data'; res = await loadXml(); }
+    const log = await logP;
     const last = log.filter((r) => r[0]).pop();
-    render({rows: interviews}, {rows: flags});
-    $('#snap').textContent = `Nguồn: Google Sheet “RMIT_Industry Survey” · Sheet sync lúc ${last ? last[0] : '—'} · Trang tải lúc ${new Date().toLocaleTimeString('vi-VN')} · Tự làm mới mỗi ${REFRESH_MIN} phút`;
+    render({rows: res.interviews}, {rows: res.flags});
+    $('#snap').textContent = `Nguồn: Google Sheet “RMIT_Industry Survey” (${src}) · Sheet sync lúc ${last ? last[0] : '—'} · Trang tải lúc ${new Date().toLocaleTimeString('vi-VN')} · Tự làm mới mỗi ${REFRESH_MIN} phút`;
   } catch (e) {
     $('#snap').textContent = 'Không tải được dữ liệu: ' + e.message + ' (sẽ thử lại sau ' + REFRESH_MIN + ' phút; số liệu đang hiện là lần tải trước, nếu có)';
   } finally { loading = false; }
