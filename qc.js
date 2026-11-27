@@ -62,7 +62,7 @@
       const {m, a, times} = parseSubject(s);
       if (m.Complete && m.Complete !== 'True') continue;
       const sid = m.SbjNum, nam = m.SbjNam || '';
-      const test = nam === 'STGTester' || m.Test === 'True';
+      const test = /^(STGTester|RMIT)$/i.test(nam.trim()) || m.Test === 'True';   // bài test: tài khoản STGTester, RMIT hoặc cờ Test
       const pvv = test ? 'TEST' : (nam.length >= 3 && /^\d+$/.test(nam) ? nam.slice(0, -1) : (nam || '?'));
       const city = m.CustomData1 || '?';
       const st = new Date(new Date(m.VStart).getTime() + 7 * 3600e3);
