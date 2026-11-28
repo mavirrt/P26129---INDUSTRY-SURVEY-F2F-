@@ -10,6 +10,8 @@
   // Chức danh chung theo cấp bậc (nhân viên, trưởng phòng…) dùng chung cho nhiều vị trí là hợp lý
   const GENERIC_TITLE = /^(nhan vien|chuyen vien|chuyen gia|thuc tap sinh|truong nhom|truong phong|pho phong|quan ly|giam doc|pho giam doc|team leader|leader|manager|staff|executive|specialist|intern|supervisor|giam sat)( .{0,15})?$/;
   const SEVW = {'Cao': 3, 'Trung bình': 2, 'Thấp': 1, 'Theo dõi': 0};
+  // Trạng thái bài được tính; các trạng thái khác (Rejected, …) bỏ qua hoàn toàn
+  const KEEP_STATUS = /^(approved|requires approval)$/i;
   const LG = 'Logic giữa câu', RG = 'So với thực tế';
 
   const kids = (el, tag) => el ? [...el.children].filter((c) => c.tagName === tag) : [];
@@ -71,6 +73,7 @@
 
     for (const {m, a, times} of subs) {
       if (m.Complete && m.Complete !== 'True') continue;
+      if (!KEEP_STATUS.test((m.Status || '').trim())) continue;   // chỉ lấy bài Approved / Requires Approval
       const sid = m.SbjNum, nam = m.SbjNam || '';
       const test = /^(STGTester|RMIT)$/i.test(nam.trim()) || m.Test === 'True';   // bài test: tài khoản STGTester, RMIT hoặc cờ Test
       const pvv = test ? 'TEST' : (nam.length >= 3 && /^\d+$/.test(nam) ? nam.slice(0, -1) : (nam || '?'));
